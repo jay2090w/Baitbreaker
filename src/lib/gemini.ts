@@ -17,15 +17,20 @@ import { tacticMeta } from "./tactics";
 // no earlier stage has answered ("hedging"). This keeps latency low when
 // Google's free tier queues a request, while usually firing just ONE call.
 //
-// Model choice is driven by free-tier reality (Oct 2026):
-//  - gemini-3.6-flash: only 20 requests/day on free — excluded from the demo path.
-//  - gemini-3.5-flash / 3.5-flash-lite: fast (~1.2s) and reliable.
-//  - gemini-3.8-flash: flagship quality, but overloaded; used as a late hedge.
+// FREE-TIER CAPACITY NOTE: daily quotas are enforced per model, so spreading
+// work across models multiplies total available requests/day. Each stage
+// below is a separate quota bucket on the free tier (Oct 2026):
+//  - gemini-3.6-flash: only 20 requests/day on free — excluded entirely.
+//  - 3.5-flash: best quality/speed balance → primary.
+//  - 3.1-flash-lite / 3.5-flash-lite / 3-flash-preview: fast alternates.
+//  - 3.8-flash: flagship quality, but often overloaded → last-resort hedge.
 // GEMINI_MODEL overrides to a single model.
 const HEDGE_STAGES: Array<{ model: string; atMs: number }> = [
   { model: "gemini-3.5-flash", atMs: 0 },
-  { model: "gemini-3.5-flash-lite", atMs: 3500 },
-  { model: "gemini-3.8-flash", atMs: 8000 },
+  { model: "gemini-3.1-flash-lite", atMs: 2000 },
+  { model: "gemini-3.5-flash-lite", atMs: 4000 },
+  { model: "gemini-3-flash-preview", atMs: 7000 },
+  { model: "gemini-3.8-flash", atMs: 10000 },
 ];
 
 /** Per-attempt timeout (ms). Free-tier thinking on overloaded models can hang. */
@@ -48,7 +53,7 @@ async function createInteraction(
   const controller = externalController ?? new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const result = await client().interactions.create(params, {
+    const result = await clientForNextAttempt().interactions.create(params, {
       timeout: timeoutMs,
       fetchOptions: { signal: controller.signal },
     });
@@ -105,13 +110,25 @@ async function callWithFallback(
     const tryModel = async (index: number, model: string) => {
       if (settled) return;
       const params = build(model);
-      // Attempt 1: as built (with thinking). Attempt 2: without thinking
-      // config for models that reject it (e.g. 3.8 rejects "minimal").
-      const attempts = [params, stripThinking(params)].filter(Boolean) as Array<
-        Parameters<GoogleGenAI["interactions"]["create"]>[0]
-      >;
-      for (const attempt of attempts) {
+      // Attempt list per model:
+      //  1) as built (with thinking)
+      //  2) with explicit external key rotate on rate limit (each key = its
+      //     own quota bucket, so a 429 on key A may succeed on key B)
+      //  3) without thinking config — some models (e.g. 3.8) reject "minimal"
+      const attempts: Array<Parameters<GoogleGenAI["interactions"]["create"]>[0]> = [];
+      if (params) attempts.push(params);
+      const stripped = stripThinking(params);
+      if (stripped) attempts.push(stripped);
+
+      // If more than one key is configured, grant a rate-limited model one
+      // extra try (the client rotates to the next key automatically).
+      const keyCount = (cachedClients ?? clients()).length;
+      const rateLimitRetries = Math.max(0, keyCount - 1);
+
+      let rlRetriesLeft = rateLimitRetries;
+      for (let a = 0; a < attempts.length; a++) {
         if (settled) return;
+        const attempt = attempts[a];
         const controller = new AbortController();
         controllers.push(controller);
         try {
@@ -129,8 +146,16 @@ async function callWithFallback(
           const message = err instanceof Error ? err.message : String(err);
           errors.push(`${model}: ${message}`);
           if (settled) return;
-          // Only retry this model without thinking if it rejected that field.
-          // Rate-limit / overload / timeout errors skip straight to the hedge.
+
+          const isRateLimit = /429|rate limit|quota|RESOURCE_EXHAUSTED|exceeded/i.test(message);
+          if (isRateLimit && rlRetriesLeft > 0) {
+            rlRetriesLeft -= 1;
+            a -= 1; // retry the same attempt params on the next key
+            continue;
+          }
+          // Only skip ahead to the next thinking variant when the model
+          // explicitly rejected that field; everything else fails the model
+          // and triggers the next hedge stage.
           if (!/thinking level/i.test(message)) break;
         }
       }
@@ -164,23 +189,99 @@ function stripThinking(
   return rest as Parameters<GoogleGenAI["interactions"]["create"]>[0];
 }
 
-let cached: GoogleGenAI | null = null;
+let cachedClients: GoogleGenAI[] | null = null;
+let attemptCounter = 0;
 
-function client(): GoogleGenAI {
-  if (!cached) {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-    if (!apiKey) {
+/**
+ * Build one client per configured key. Free-tier quotas are enforced per
+ * Google Cloud project, so extra keys (GEMINI_API_KEY_2, _3, ... from
+ * separate projects) add capacity for free. All keys are tried in rotation.
+ */
+function clients(): GoogleGenAI[] {
+  if (!cachedClients) {
+    const keys = [
+      process.env.GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY_2,
+      process.env.GEMINI_API_KEY_3,
+      process.env.GEMINI_API_KEY_4,
+    ]
+      .map((k) => k?.trim())
+      .filter((k): k is string => Boolean(k));
+    if (!keys.length) {
       throw new Error(
         "GEMINI_API_KEY is not set. Add it to .env.local and restart the dev server.",
       );
     }
-    cached = new GoogleGenAI({ apiKey });
+    cachedClients = keys.map((apiKey) => new GoogleGenAI({ apiKey }));
   }
-  return cached;
+  return cachedClients;
+}
+
+/** Round-robin the configured keys so parallel/hedged calls spread load. */
+function clientForNextAttempt(): GoogleGenAI {
+  const list = clients();
+  const c = list[attemptCounter % list.length];
+  attemptCounter += 1;
+  return c;
 }
 
 export function hasApiKey(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY?.trim());
+  return Boolean(
+    process.env.GEMINI_API_KEY?.trim() ||
+      process.env.GEMINI_API_KEY_2?.trim() ||
+      process.env.GEMINI_API_KEY_3?.trim() ||
+      process.env.GEMINI_API_KEY_4?.trim(),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Response cache — free quota saver.
+// Identical inputs (e.g. the demo sample buttons judges click repeatedly) are
+// served from memory without spending a single API request. Only successful
+// AI results are cached; fallback results are re-tried later.
+// ---------------------------------------------------------------------------
+export interface AnalyzeResult {
+  analysis: Analysis;
+  engine: "ai+heuristics" | "heuristics";
+  error?: string;
+}
+
+const CACHE_MAX_ENTRIES = 200;
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+const analysisCache = new Map<string, { at: number; result: AnalyzeResult }>();
+
+/** Cheap stable hash for image data (djb2). */
+function hashData(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i += 1) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+function cacheKeyOf(input: AnalyzeInput, text: string): string {
+  if (input.image) {
+    return `img:${hashData(input.image.data)}:${input.image.mimeType}`;
+  }
+  return `txt:${text}`;
+}
+
+function cacheGet(key: string): AnalyzeResult | null {
+  const hit = analysisCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    analysisCache.delete(key);
+    return null;
+  }
+  return hit.result;
+}
+
+function cacheSet(key: string, result: AnalyzeResult): void {
+  if (result.engine !== "ai+heuristics") return; // never cache fallbacks
+  if (analysisCache.size >= CACHE_MAX_ENTRIES) {
+    const oldest = analysisCache.keys().next().value;
+    if (oldest !== undefined) analysisCache.delete(oldest);
+  }
+  analysisCache.set(key, { at: Date.now(), result });
 }
 
 interface AnalyzeInput {
@@ -193,12 +294,17 @@ interface AnalyzeInput {
  * Strategy: run the instant heuristic scan first; then refine with Gemini.
  * If the API fails for any reason, return the heuristic result (demo never dies).
  */
-export async function analyze(input: AnalyzeInput): Promise<{
-  analysis: Analysis;
-  engine: "ai+heuristics" | "heuristics";
-  error?: string;
-}> {
+export async function analyze(input: AnalyzeInput): Promise<AnalyzeResult> {
   const text = (input.text ?? "").trim();
+  const key = cacheKeyOf(input, text);
+
+  // Free quota saver: identical requests (demo samples judges replay) are
+  // answered from memory — zero API calls, instantly.
+  const cachedResult = cacheGet(key);
+  if (cachedResult) {
+    console.log(`[gemini] cache hit (${input.image ? "image" : "text"})`);
+    return cachedResult;
+  }
 
   if (!hasApiKey()) {
     if (input.image) {
@@ -206,11 +312,12 @@ export async function analyze(input: AnalyzeInput): Promise<{
         "Image analysis needs the AI engine. Add GEMINI_API_KEY to .env.local and restart.",
       );
     }
-    return {
+    const result: AnalyzeResult = {
       analysis: heuristicAnalysis(text),
       engine: "heuristics",
       error: "GEMINI_API_KEY not set — using the offline pattern engine.",
     };
+    return result;
   }
 
   const { hits: heuristicHits } = heuristicScan(input.image ? "" : text);
@@ -250,7 +357,12 @@ export async function analyze(input: AnalyzeInput): Promise<{
     }));
 
     const parsed = JSON.parse(raw) as Analysis;
-    return { analysis: normalizeAnalysis(parsed, text), engine: "ai+heuristics" };
+    const result: AnalyzeResult = {
+      analysis: normalizeAnalysis(parsed, text),
+      engine: "ai+heuristics",
+    };
+    cacheSet(key, result); // free quota saver for repeat requests
+    return result;
   } catch (err) {
     if (input.image) {
       throw new Error(

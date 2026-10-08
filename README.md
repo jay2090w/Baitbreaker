@@ -60,8 +60,19 @@ Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apike
 Optional env vars:
 
 ```bash
-GEMINI_MODEL=            # force a single model (default: hedged 3.5-flash → 3.5-flash-lite → 3.8-flash)
+GEMINI_MODEL=            # force a single model (default: hedged 3.5-flash → 3.1-flash-lite → 3.5-flash-lite → 3-flash-preview → 3.8-flash)
+GEMINI_API_KEY_2=        # extra keys FROM SEPARATE PROJECTS multiply free capacity (quota is per project)
+GEMINI_API_KEY_3=
+GEMINI_API_KEY_4=
 ```
+
+### Maximizing free capacity
+
+Free-tier quotas are enforced **per model** and **per project**, so BaitBreaker stretches them three ways at zero cost:
+
+1. **Multi-model hedging** — each of the five models in the chain is a separate daily quota bucket.
+2. **Multi-key rotation** — each extra key from a *separate* Google Cloud project is another quota bucket; keys rotate automatically, and a rate-limited (429) request is retried on the next key before falling back to another model.
+3. **Response cache** — identical inputs (e.g. the demo sample buttons) are served from memory with zero API calls.
 
 ## Testing
 
