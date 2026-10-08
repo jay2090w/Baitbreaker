@@ -2,6 +2,8 @@
 
 **See the hook. Break the bait.**
 
+**Live demo:** https://baitbreaker.vercel.app
+
 An AI-powered scam detection and inoculation platform, built for **ForgeHacks 2026** (AI + Cybersecurity track).
 
 Scams cost people over a trillion dollars a year, and generative AI has made them fluent, personalized, and multilingual. BaitBreaker fights back with the same technology in two layers:

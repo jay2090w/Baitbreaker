@@ -2,6 +2,9 @@
 
 Everything you need to submit and demo. Read this file top to bottom on submission day.
 
+**Live URL:** https://baitbreaker.vercel.app
+**Repo:** https://github.com/jay2090w/Baitbreaker
+
 ---
 
 ## 1. Elevator pitch (use this everywhere)
@@ -101,10 +104,10 @@ Scams cost people over a trillion dollars a year, and generative AI has made the
 
 ## 4. Before submitting — checklist
 
-- [ ] GitHub repo public with README
-- [ ] Vercel deployment live, `GEMINI_API_KEY` set in project env vars
-- [ ] Test the deployed URL: analyzer with a sample, gym end-to-end
+- [x] GitHub repo public with README → https://github.com/jay2090w/Baitbreaker
+- [x] Vercel deployment live, `GEMINI_API_KEY` set in project env vars → https://baitbreaker.vercel.app
+- [x] Tested the deployed URL: analyzer (text + screenshot) and gym end-to-end
 - [ ] Demo video uploaded (YouTube unlisted or Loom)
 - [ ] Devpost form filled (description above, built-with list, video link, repo link, live URL)
-- [ ] Double-check the deployed site doesn't expose the API key (it never should — all calls are server-side)
+- [x] Deployed site API key protected (all calls server-side)
 - [ ] Submit before **Saturday Oct 10, 12:00 PM** (submissions lock — don't be that team)
