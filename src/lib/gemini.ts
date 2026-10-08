@@ -220,9 +220,12 @@ function clients(): GoogleGenAI[] {
 /** Round-robin the configured keys so parallel/hedged calls spread load. */
 function clientForNextAttempt(): GoogleGenAI {
   const list = clients();
-  const c = list[attemptCounter % list.length];
+  const index = attemptCounter % list.length;
   attemptCounter += 1;
-  return c;
+  if (list.length > 1) {
+    console.log(`[gemini] using key #${index + 1}/${list.length}`);
+  }
+  return list[index];
 }
 
 export function hasApiKey(): boolean {
