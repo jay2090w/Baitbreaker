@@ -12,8 +12,6 @@ interface Rule {
   explanation: string;
 }
 
-const CURRENCY = String.raw`(?:\$|₹|€|£|USD|INR|EUR|GBP)\s?\d`;
-
 const RULES: Rule[] = [
   {
     tactic: "urgency",

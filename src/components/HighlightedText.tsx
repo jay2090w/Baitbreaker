@@ -9,26 +9,86 @@ interface Segment {
   hit?: TacticHit;
 }
 
+/** Normalize smart quotes and whitespace for robust matching. */
+function normalize(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+/**
+ * Map a [start, start+length) range in normalized text back to the index in
+ * the original text. Whitespace runs collapse to a single space, so the
+ * original index is at or after the normalized index.
+ */
+function mapNormalizedIndex(
+  original: string,
+  _length: number,
+  normalizedStart: number,
+): number {
+  let normalizedCount = 0;
+  let i = 0;
+  let inWhitespace = false;
+  while (i < original.length) {
+    const ch = original[i];
+    const isWs = /\s/.test(ch);
+    let contributes = true;
+    if (isWs) {
+      if (inWhitespace) contributes = false;
+      inWhitespace = true;
+    } else {
+      inWhitespace = false;
+    }
+    if (contributes) {
+      if (normalizedCount === normalizedStart) return i;
+      normalizedCount += 1;
+    }
+    i += 1;
+  }
+  return -1;
+}
+
 /** Find every tactic quote inside the original text, resolving overlaps. */
 function buildSegments(text: string, hits: TacticHit[]): Segment[] {
   const lower = text.toLowerCase();
+  const normalizedText = normalize(text);
 
   const found: Array<{ start: number; end: number; hit: TacticHit }> = [];
   for (const hit of hits) {
     const quote = hit.quote.trim();
     if (!quote) continue;
-    // Try exact match first, then case-insensitive.
+    // Try exact match first, then case-insensitive, then smart-quote/whitespace
+    // normalized matching (models often re-type curly quotes as straight ones).
     let index = text.indexOf(quote);
     if (index === -1) index = lower.indexOf(quote.toLowerCase());
     if (index === -1) {
-      // Model paraphrased; try the first 24 chars as an anchor.
-      const anchor = quote.slice(0, 24).toLowerCase();
-      if (anchor.length >= 8) index = lower.indexOf(anchor);
+      const normalizedQuote = normalize(quote);
+      const at = normalizedText.indexOf(normalizedQuote);
+      if (at === -1) {
+        // Model paraphrased; try the first 24 chars as an anchor.
+        const anchor = normalize(quote.slice(0, 24));
+        if (anchor.length >= 8) {
+          const anchorAt = normalizedText.indexOf(anchor);
+          if (anchorAt !== -1) {
+            found.push({
+              start: anchorAt,
+              end: Math.min(anchorAt + quote.length, text.length),
+              hit,
+            });
+          }
+        }
+        continue;
+      }
+      // Map normalized index back to original: walk and count non-collapsed chars.
+      index = mapNormalizedIndex(text, normalizedQuote.length, at);
       if (index === -1) continue;
-      found.push({ start: index, end: index + Math.min(quote.length, text.length - index), hit });
-      continue;
     }
-    found.push({ start: index, end: index + quote.length, hit });
+    found.push({
+      start: index,
+      end: Math.min(index + quote.length, text.length),
+      hit,
+    });
   }
 
   // Longest-first, drop overlaps.

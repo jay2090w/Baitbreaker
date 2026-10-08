@@ -276,10 +276,22 @@ function normalizeAnalysis(
       ? Math.max(0, Math.min(100, Math.round(n)))
       : fallback;
 
-  // Verify quotes actually appear in the source text (or in extracted text for images).
+  // Verify quotes actually appear in the source text (or in extracted text
+  // for images). Verified quotes render as inline highlights, so they sort
+  // first in the breakdown; unverified ones still inform the analysis.
   const source = (originalText || a.extracted_text || "").toLowerCase();
-  const tactics = (Array.isArray(a.tactics) ? a.tactics : []).filter(
+  const normalizedSource = source.replace(/[\u2018\u2019\u201c\u201d]/g, "'").replace(/\s+/g, " ");
+  const rawTactics = (Array.isArray(a.tactics) ? a.tactics : []).filter(
     (t) => t && typeof t.quote === "string" && t.quote.trim().length > 0,
+  );
+  const isVerified = (quote: string) => {
+    const q = quote.trim().toLowerCase();
+    if (source.includes(q)) return true;
+    const normalizedQuote = q.replace(/[\u2018\u2019\u201c\u201d]/g, "'").replace(/\s+/g, " ");
+    return normalizedSource.includes(normalizedQuote);
+  };
+  const tactics = [...rawTactics].sort(
+    (x, y) => Number(isVerified(y.quote)) - Number(isVerified(x.quote)),
   );
 
   return {

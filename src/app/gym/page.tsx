@@ -36,10 +36,15 @@ export default function GymPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
 
+  // Load persisted stats after mount. Reading localStorage during render/init
+  // would cause an SSR hydration mismatch, so an effect is correct here.
   useEffect(() => {
     try {
       const raw = localStorage.getItem("baitbreaker-gym-stats");
-      if (raw) setStats({ ...EMPTY_STATS, ...JSON.parse(raw) });
+      if (raw) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage
+        setStats({ ...EMPTY_STATS, ...JSON.parse(raw) });
+      }
     } catch {
       /* ignore */
     }
