@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>BaitBreaker demo assets</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+  html, body { background: #000; width: 1170px; max-width: 1170px; overflow: hidden; }
+  #phone { box-shadow: none; }
+  ::selection { background: transparent; }
+
+  #phone {
+    width: 1170px;              /* iPhone 15 Pro logical width @3x-ish */
+    background: #000;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ---------- status bar ---------- */
+  .statusbar {
+    height: 62px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 46px 0 54px;
+    color: #fff; font-size: 25px; font-weight: 600; letter-spacing: .2px;
+    background: #000;
+  }
+  .status-right { display: flex; align-items: center; gap: 12px; }
+  .battery { width: 40px; height: 21px; border: 2.5px solid #fff; border-radius: 7px; position: relative; }
+  .battery::after { content: ""; position: absolute; right: -6px; top: 6px; width: 3px; height: 7px; background: #fff; border-radius: 0 2px 2px 0; }
+  .battery i { position: absolute; inset: 2.5px; width: 22px; background: #fff; border-radius: 3px; display: block; }
+
+  /* ---------- nav bar ---------- */
+  .navbar {
+    height: 108px; background: #1c1c1e; border-bottom: .5px solid #38383a;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .navbar .back { position: absolute; left: 30px; top: 50%; transform: translateY(-50%); color: #0a84ff; font-size: 30px; }
+  .navbar .contact { color: #fff; font-size: 32px; font-weight: 600; }
+  .navbar .contact small { display: block; font-size: 22px; font-weight: 400; color: #8e8e93; margin-top: 2px; }
+
+  /* ---------- thread ---------- */
+  .thread { padding: 22px 18px 30px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble {
+    max-width: 74%; padding: 15px 20px; border-radius: 21px;
+    font-size: 29px; line-height: 1.32; color: #fff; position: relative;
+  }
+  .in  { background: #26262a; align-self: flex-start; border-bottom-left-radius: 7px; }
+  .out { background: #0a84ff; align-self: flex-end; border-bottom-right-radius: 7px; }
+  .meta { font-size: 20px; color: #8e8e93; margin-top: -6px; padding: 0 8px; }
+  .meta.out { align-self: flex-end; }
+  .meta.in  { align-self: flex-start; }
+  .sender { font-size: 22px; color: #8e8e93; margin: 8px 8px -4px; }
+
+  /* ---------- input bar ---------- */
+  .inputbar {
+    height: 96px; background: #1c1c1e; border-top: .5px solid #38383a;
+    display: flex; align-items: center; padding: 0 22px; gap: 16px;
+  }
+  .inputbar .bubblefield {
+    flex: 1; height: 66px; border: 1px solid #48484a; border-radius: 22px;
+    display: flex; align-items: center; padding: 0 22px; color: #8e8e93; font-size: 28px;
+  }
+
+  /* ---------- whatsapp variant ---------- */
+  #phone.wa .navbar { background: #1f2c34; }
+  #phone.wa .thread { background: #0b141a; }
+  #phone.wa .bubble.in { background: #202c33; }
+  #phone.wa .bubble.out { background: #005c4b; }
+</style>
+</head>
+<body>
+<div id="phone" data-shot="phone"></div>
+<script>
+const M = {
+  /* 1 — bank phishing SMS (text analyzer + screenshot) */
+  bank: {
+    nav: { title: "+1 (800) 555-0147", sub: "SMS" },
+    sender: "Text Message · today 9:41 AM",
+    msgs: [
+      ["in", "URGENT: Your Northgate Bank account has been temporarily suspended due to a suspicious transaction of $1,249.00. You must verify your identity within 24 hours or your funds will be held."],
+      ["in", "Verify now: http://northgate-secure-verify.xyz/login"],
+      ["in", "Failure to comply will result in permanent closure. Reply with the 6-digit code we just sent to confirm it's you."],
+      ["out", "This looks like a scam, I'm calling the bank directly."],
+      ["in", "There is no time. Do not call the official number. Your cooperation is required to release the funds today."],
+    ],
+  },
+
+  /* 2 — package redelivery fee */
+  parcel: {
+    nav: { title: "SwiftPost Delivery", sub: "SMS · +1 (800) 555-0198" },
+    sender: "Text Message · today 2:12 PM",
+    msgs: [
+      ["in", "Your SwiftPost parcel could not be delivered because the address on file is incomplete. A $1.99 redelivery fee is required to reschedule."],
+      ["in", "Pay here: http://swiftpost-redelivery.example/pay — this link expires in 12 hours and your parcel will be returned to sender."],
+      ["out", "I never ordered anything."],
+      ["in", "Our records show an item dispatched to your address on Monday. Failure to pay within 12 hours will result in automatic return and a $6.00 non-refundable handling charge."],
+    ],
+  },
+
+  /* 3 — grandchild emergency (WhatsApp) */
+  emergency: {
+    wa: true,
+    nav: { title: "Maya 🧑‍🎓", sub: "online" },
+    sender: "today 11:03 PM",
+    msgs: [
+      ["in", "Grandma I accidentally broke my phone. This is my new number, save it"],
+      ["in", "Please don't tell dad. I need $400 for an emergency repair at the shop and they close in an hour. Can you send it to my friend Venmo @maya-locked?"],
+      ["in", "I'm panicking please hurry. If you can't do Venmo send it to a Google Play gift card and I'll pay you back tonight. I can't talk rn the shop is calling me"],
+      ["out", "Are you okay? Let me call you."],
+      ["in", "No calls!! They said phone is broken remember?? Just send the money quickly please 🙏"],
+    ],
+  },
+
+  /* 4 — job / advance fee scam */
+  job: {
+    nav: { title: "TalentHive Recruiter", sub: "LinkedIn · SMS" },
+    sender: "Text Message · yesterday 6:30 PM",
+    msgs: [
+      ["in", "Hi, your profile stood out for our remote data-entry role. Payable $4,200/month, no experience needed, flexible hours."],
+      ["in", "To activate your worker account and release your first task payment, a one-time onboarding fee of $85 is required. Reply 'YES' to proceed."],
+      ["in", "Note: this fee is non-refundable and standard for all hires. We have candidates waiting, Kindly confirm within 6 hours to secure your slot."],
+    ],
+  },
+
+  /* 5 — SAFE message (calibration demo: proves low false-positive rate) */
+  safe: {
+    nav: { title: "Dr. Patel Clinic", sub: "SMS · +1 (555) 010-2244" },
+    sender: "Text Message · today 8:15 AM",
+    msgs: [
+      ["in", "Reminder: appointment with Dr. Patel tomorrow, Friday 3:30 PM at Lakeview Clinic, Suite 210. Reply C to confirm or F to reschedule. Reply STOP to opt out."],
+      ["out", "C"],
+      ["in", "Confirmed. See you tomorrow. Please bring your insurance card and the medication list we emailed you."],
+    ],
+  },
+};
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+const key = new URLSearchParams(location.search).get("m") || "bank";
+const d = M[key];
+if (!d) document.getElementById("phone").textContent = "unknown preset";
+
+const ph = document.getElementById("phone");
+if (d.wa) ph.classList.add("wa");
+
+// Derive the displayed timestamp: take the text after "·" when present,
+// otherwise the whole sender string (WhatsApp-style "today 11:03 PM").
+const rawTime = d.sender.includes("·") ? d.sender.split("·")[1].trim() : d.sender.trim();
+const time = rawTime.charAt(0).toUpperCase() + rawTime.slice(1);
+
+ph.innerHTML = `
+  <div class="statusbar">
+    <span>9:41</span>
+    <div class="status-right">
+      <svg width="30" height="18" viewBox="0 0 30 18" fill="#fff"><rect x="0" y="12" width="4" height="6" rx="1"/><rect x="7" y="8" width="4" height="10" rx="1"/><rect x="14" y="4" width="4" height="14" rx="1"/><rect x="21" y="0" width="4" height="18" rx="1" opacity=".4"/></svg>
+      <svg width="27" height="18" viewBox="0 0 27 18" fill="#fff"><path d="M13.5 17.5 10.8 14.8a3.8 3.8 0 0 1 5.4 0zM7.6 11.6 5.2 9.2a11.7 11.7 0 0 1 16.6 0l-2.4 2.4a8.7 8.7 0 0 0-12 0zM2 5.8-.4 3.4A16.4 16.4 0 0 1 27 3.4l-2.4 2.4a13.3 13.3 0 0 0-22.6 0z" transform="translate(0,1)"/></svg>
+      <span class="battery"><i></i></span>
+    </div>
+  </div>
+  <div class="navbar">
+    <span class="back">‹</span>
+    <div class="contact">${esc(d.nav.title)}<small>${esc(d.nav.sub)}</small></div>
+  </div>
+  <div class="thread">
+    <div class="sender">${esc(time)}</div>
+    ${d.msgs.map((m, i) => {
+      const last = i === d.msgs.length - 1;
+      return `<div class="bubble ${m[0]}">${esc(m[1])}</div>` +
+        (last ? `<div class="meta ${m[0]}">${esc(time)}</div>` : "");
+    }).join("")}
+  </div>
+  <div class="inputbar"><div class="bubblefield">iMessage</div></div>
+`;
+document.title = key;
+window.getSelection && window.getSelection().removeAllRanges();
+document.body.style.userSelect = "none";
+</script>
+</body>
+</html>

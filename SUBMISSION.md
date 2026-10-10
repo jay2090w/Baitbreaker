@@ -87,8 +87,18 @@ Scams cost people over a trillion dollars a year [1], and generative AI has made
 **Setup before recording:**
 - `npm run dev` running, browser on http://localhost:3000, dark theme
 - Have the "Bank phishing SMS" sample ready (Analyzer)
-- Have a screenshot file of a scam text ready to upload
+- Have a screenshot file of a scam text ready to upload — use `demo-assets/01-bank-phishing-sms.png`
 - Gym: pre-generate one scenario so there's no wait on camera
+
+**Demo assets** in `demo-assets/` (all fictional sample data, safe to show on camera):
+
+| File | Use it for |
+|---|---|
+| `01-bank-phishing-sms.png` | **Primary screenshot demo** — upload this one |
+| `02-parcel-redelivery-fee.png` | Alternate: delivery-fee scam |
+| `03-grandchild-emergency-whatsapp.png` | Alternate: WhatsApp/grandparent scam |
+| `04-job-advance-fee.png` | Alternate: job / advance-fee scam |
+| `05-safe-clinic-reminder.png` | **Calibration proof** — a genuine message that scores low |
 
 | Time | On screen | Say |
 |---|---|---|
@@ -97,7 +107,7 @@ Scams cost people over a trillion dollars a year [1], and generative AI has made
 | 0:25 | Click analyze, result appears | "In five seconds: a hundred-out-of-hundred risk score, and every manipulation tactic highlighted inside the message itself. *Urgency* — amber. *Threat of losing funds* — red. *The fake .xyz domain* — cyan. *Asking for an OTP* — that's the whole scam in one line." |
 | 0:55 | Scroll to asks + report | "It tells you exactly what they want — your OTP — drafts a report you can paste to your bank, and says: do not reply." |
 | 1:05 | Upload screenshot of scam text | "Screenshots too. No typing needed — it reads the image, transcribes the thread, and analyzes it." |
-| 1:20 | Show verdict on screenshot | "A grandparent emergency scam — flagged instantly." |
+| 1:20 | Show verdict on screenshot | "A bank phishing SMS — screenshot straight from the phone, flagged instantly." |
 | 1:30 | Switch to Scam Gym | "But detection is only half the problem. Filters can't protect you from the message that gets through. So we built the Scam Gym." |
 | 1:40 | Hit start, scenario appears; tap 2-3 sentences, submit | "The AI writes fresh scams just for you — this one's a client who wants your bank details before paying. I'll flag what I think are the tells… and submit." |
 | 2:05 | Scored reveal | "It scores recall *and* over-flagging — because some rounds are genuinely safe. Every round ends with a debrief: what you caught, what you missed, why. That's inoculation — training beats tooling." |
