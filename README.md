@@ -107,6 +107,13 @@ src/
 
 Built for ForgeHacks 2026 — AI + Cybersecurity track.
 
+## Sources
+
+- Global Anti-Scam Alliance & Feedzai, *Global State of Scams 2024* — over US$1 trillion lost to scams globally in 12 months. https://gasa.org/knowledge-base/blog/global-state-of-scams-report-2024-1-trillion-stolen-in-12-months-gasa-feedzai
+- SlashNext, *State of Phishing 2023* — 1,265% increase in malicious phishing emails since Q4 2022. https://www.cnbc.com/2023/11/28/ai-like-chatgpt-is-creating-huge-increase-in-malicious-phishing-email.html
+- Global Anti-Scam Alliance & Feedzai, *Global State of Scams 2025* — 57% of surveyed adults encountered a scam last year; 23% lost money. https://gasa.org/knowledge-base/blog/global-scams-on-the-rise-over-half-of-adults-worldwide-report-scam-encounters
+- US FTC, Consumer Sentinel Network Data Book 2024 — $12.5 billion reported lost to fraud in the US in 2024 (+25% YoY). https://www.ftc.gov/news-events/news/press-releases/2025/03/new-ftc-data-show-big-jump-reported-losses-fraud-125-billion-2024
+
 ---
 
 *BaitBreaker is an awareness tool, not legal or financial advice. When in doubt, verify through official channels — never through numbers or links in a message.*

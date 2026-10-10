@@ -18,7 +18,7 @@ Everything you need to submit and demo. Read this file top to bottom on submissi
 
 ### Inspiration
 
-Scams cost people over a trillion dollars a year, and generative AI has made them fluent, personalized, and multilingual. Most anti-scam tools are black boxes: they say "spam" and give you no reason. And even perfect detection fails when a scam arrives through a channel the filter can't see, written in your own language, referencing your own life. We built BaitBreaker because protection needs two layers: an analyst-grade detector for the message in front of you, and inoculation training so you're harder to fool forever.
+Scams cost people over a trillion dollars a year [1], and generative AI has made them fluent, personalized, and multilingual [2]. Most anti-scam tools are black boxes: they say "spam" and give you no reason. And even perfect detection fails when a scam arrives through a channel the filter can't see, written in your own language, referencing your own life. We built BaitBreaker because protection needs two layers: an analyst-grade detector for the message in front of you, and inoculation training so you're harder to fool forever.
 
 ### What it does
 
@@ -71,6 +71,15 @@ Scams cost people over a trillion dollars a year, and generative AI has made the
 
 `next.js` `typescript` `tailwindcss` `google-gemini` `interactions-api` `structured-outputs` `multimodal` `react`
 
+### Sources & attributions
+
+1. Global Anti-Scam Alliance & Feedzai, *Global State of Scams 2024* — scammers stole over **US$1 trillion** globally in 12 months (published 2024, covering 2023). https://gasa.org/knowledge-base/blog/global-state-of-scams-report-2024-1-trillion-stolen-in-12-months-gasa-feedzai
+2. SlashNext, *State of Phishing 2023* — a **1,265% increase in malicious phishing emails** since Q4 2022 (ChatGPT-era), including a 967% rise in credential phishing. https://www.cnbc.com/2023/11/28/ai-like-chatgpt-is-creating-huge-increase-in-malicious-phishing-email.html
+3. Global Anti-Scam Alliance & Feedzai, *Global State of Scams 2025* — **57% of surveyed adults encountered a scam** in the past year and 23% lost money; an estimated $442B was lost across the 42 countries surveyed. https://gasa.org/knowledge-base/blog/global-scams-on-the-rise-over-half-of-adults-worldwide-report-scam-encounters
+4. US Federal Trade Commission, Consumer Sentinel Network Data Book 2024 — consumers reported losing **$12.5 billion to fraud in 2024**, up 25% year over year. https://www.ftc.gov/news-events/news/press-releases/2025/03/new-ftc-data-show-big-jump-reported-losses-fraud-125-billion-2024
+
+*Build transparency:* AI coding tools were used to help build this project (the ForgeHacks rules permit this). The product's own AI — Google Gemini — is the in-app scam-analysis engine and is what powers the Analyzer and Scam Gym.
+
 ---
 
 ## 3. Demo video script (~2:30, record with OBS or Loom)
@@ -107,6 +116,7 @@ Scams cost people over a trillion dollars a year, and generative AI has made the
 - [x] GitHub repo public with README → https://github.com/jay2090w/Baitbreaker
 - [x] Vercel deployment live, `GEMINI_API_KEY` set in project env vars → https://baitbreaker.vercel.app
 - [x] Tested the deployed URL: analyzer (text + screenshot) and gym end-to-end
+- [x] Devpost form description has [1]–[4] citations + "Sources & attributions" section pasted
 - [ ] Demo video uploaded (YouTube unlisted or Loom)
 - [ ] Devpost form filled (description above, built-with list, video link, repo link, live URL)
 - [x] Deployed site API key protected (all calls server-side)
